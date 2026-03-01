@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anki UWorld Step1 Tag Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 35px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 650px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2em;
+        }
+        p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            color: #555;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"] {
+            width: calc(100% - 22px); /* Account for padding and border */
+            padding: 12px 10px;
+            margin-bottom: 25px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 1.1em;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        input[type="text"]:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.2em;
+            width: 100%;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+        }
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 123, 255, 0.3);
+        }
+        .output-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e9f7ff;
+            border: 1px solid #b3e0ff;
+            border-radius: 8px;
+            word-break: break-all; /* Ensures long strings wrap */
+            font-size: 1.05em;
+            color: #004085;
+        }
+        .output-section strong {
+            color: #0056b3;
+        }
+        .output-section p {
+            margin: 0;
+            padding-top: 10px;
+            font-family: 'Courier New', Courier, monospace; /* Monospace for code-like output */
+            background-color: #f8fcff;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px dashed #cce5ff;
+        }
+        .copy-feedback {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            color: #28a745; /* Green for success */
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            min-height: 20px; /* Prevent layout shift */
+        }
+        .copy-feedback.show {
+            opacity: 1;
+        }
+        .copy-feedback.error {
+            color: #dc3545; /* Red for error */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Anki UWorld Step Tag Generator</h1>
+
+        <p>
+            Enter one or more UWorld question ids separated by commas (e.g., <code>123</code>, <code>456, 789</code>, <code>1001, 1002, 1003</code>).
+            The tool will generate Anki tags to find anki cards based on the UWord question ids and automatically copy them to your clipboard.
+        </p>
+
+        <label for="numberInput">Enter UWorld question ids:</label>
+        <input type="text" id="numberInput" placeholder="e.g. 1, 1975, 791">
+
+        <button id="generateButton">Get Anki Tags</button>
+
+        <div class="output-section">
+            <strong>Generated Tags:</strong>
+            <p id="outputTags">Your generated tags will appear here.</p>
+        </div>
+
+        <div id="copyFeedback" class="copy-feedback"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const numberInput = document.getElementById('numberInput');
+            const generateButton = document.getElementById('generateButton');
+            const outputTags = document.getElementById('outputTags');
+            const copyFeedback = document.getElementById('copyFeedback');
+
+            generateButton.addEventListener('click', async () => {
+                const inputValue = numberInput.value.trim();
+                copyFeedback.classList.remove('show', 'error'); // Reset feedback
+
+                if (!inputValue) {
+                    outputTags.textContent = "Please enter one or more UWorld step numbers.";
+                    return;
+                }
+
+                // Split the input by comma, trim whitespace from each part, and filter out any empty strings
+                const numbers = inputValue.split(',')
+                                          .map(num => num.trim())
+                                          .filter(num => num !== '');
+
+                if (numbers.length === 0) {
+                    outputTags.textContent = "No valid numbers found. Please enter numbers separated by commas.";
+                    return;
+                }
+
+                const baseTagPrefix = "tag:#AK_Step1_v12::#UWorld::Step::";
+                const ankiTags = numbers.map(num => `${baseTagPrefix}${num}`).join(' OR ');
+
+                outputTags.textContent = ankiTags;
+
+                // Attempt to copy to clipboard
+                try {
+                    await navigator.clipboard.writeText(ankiTags);
+                    copyFeedback.textContent = "Tags copied to clipboard!";
+                    copyFeedback.classList.add('show');
+                    // Hide feedback after a few seconds
+                    setTimeout(() => {
+                        copyFeedback.classList.remove('show');
+                    }, 3000);
+                } catch (err) {
+                    console.error('Failed to copy to clipboard:', err);
+                    copyFeedback.textContent = "Failed to copy to clipboard. Please copy the text manually.";
+                    copyFeedback.classList.add('show', 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
